@@ -669,6 +669,11 @@ static void WriteHeader()
     Console.WriteLine(@"       ╚═══════════════════════════════════════════════╝");
     Console.ResetColor();
     Console.WriteLine();
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine("  Note: intended for minor patch updates only (e.g. 3.6.x → 3.6.y).");
+    Console.WriteLine("        Not designed for jumping across major or minor versions.");
+    Console.ResetColor();
+    Console.WriteLine();
 }
 
 static void Step(string msg)

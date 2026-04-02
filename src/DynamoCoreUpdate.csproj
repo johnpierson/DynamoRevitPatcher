@@ -11,6 +11,7 @@
     <AssemblyTitle>DynamoVersionPatcher 3.6.2</AssemblyTitle>
     <AssemblyVersion>3.6.2.0</AssemblyVersion>
     <FileVersion>3.6.2.0</FileVersion>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <!-- Publish profile: single self-contained exe -->
