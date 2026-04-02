@@ -1,10 +1,10 @@
 # DynamoVersionPatcher
 
-A small command-line utility that upgrades the **DynamoCore runtime** bundled with Autodesk products to version **3.6.2** — no reinstall, no waiting for a service pack.
+A small command-line utility that upgrades the **DynamoCore runtime** bundled with Autodesk products — no reinstall, no waiting for a service pack.
 
-Supported hosts:
-- **Autodesk Revit 2026**
-- **Autodesk Civil 3D 2026**
+Supported hosts (auto-detected from your Autodesk installation):
+- **Autodesk Revit** (any year)
+- **Autodesk Civil 3D** (any year)
 
 > **Use at your own risk.** This tool modifies files inside your Autodesk installation. It is unofficial and unaffiliated with Autodesk or the Dynamo team. A backup is taken automatically before any changes are made.
 
@@ -20,16 +20,16 @@ It was built to answer the question "what if" and shared here in the hope that o
 
 1. Checks that you are running as Administrator and that the target application is closed.
 2. Backs up your current Dynamo installation to `Documents\Dynamo<Host>_Backup`.
-3. Downloads the official `DynamoCoreRuntime3.6.2` zip from the [DynamoDS GitHub releases page](https://github.com/DynamoDS/Dynamo/releases).
-4. Extracts the runtime into the Dynamo directory for your chosen host.
-5. Verifies the installed version matches the expected target.
+3. Fetches the list of available DynamoCoreRuntime builds and lets you pick one.
+4. Downloads the selected runtime zip and extracts it into the Dynamo directory for your chosen host.
+5. Verifies the installed version matches the selected target.
 
 Host-specific bridge files (e.g. `DynamoRevitDS.dll`) are left untouched — only the core runtime is updated.
 
 ## Requirements
 
 - Windows 10/11 (64-bit)
-- Autodesk Revit **2026** or Civil 3D **2026** with Dynamo installed
+- Autodesk Revit or Civil 3D with Dynamo installed
 - Administrator privileges
 - An internet connection (or a pre-downloaded zip — see `--zip-path`)
 
@@ -38,7 +38,7 @@ Host-specific bridge files (e.g. `DynamoRevitDS.dll`) are left untouched — onl
 1. **Close Revit or Civil 3D** completely.
 2. Download `DynamoCoreUpdate.exe` from the [Releases](../../releases) page.
 3. Right-click the `.exe` and choose **Run as administrator**.
-4. Select your host application from the menu and follow the on-screen prompts.
+4. Select your host application, then select the runtime version to install.
 
 The tool will download the runtime (~50 MB), extract it, and confirm the new version.
 
@@ -51,14 +51,16 @@ You'll likely see a SmartScreen prompt the first time you run it — this is nor
 Run from an administrator command prompt for more control:
 
 ```
-DynamoCoreUpdate.exe [--host <revit|civil3d>] [--install-dir <path>] [--zip-path <file>] [--backup-dir <path>] [--no-backup] [--force]
+DynamoCoreUpdate.exe [--host <key>] [--version <version>] [--install-dir <path>] [--zip-path <file>] [--build-dir <path>] [--backup-dir <path>] [--no-backup] [--force]
 ```
 
 | Flag | Description |
 |------|-------------|
-| `--host <revit\|civil3d>` | Target host application. If omitted, an interactive menu is shown |
+| `--host <key>` | Target host key (e.g. `revit-2026`, `civil3d-2026`). If omitted, an interactive menu is shown |
+| `--version <version>` | Runtime version to install (e.g. `3.6.2`). Use `latest` for the newest stable release. If omitted, an interactive picker is shown |
 | `--install-dir <path>` | Path to the Dynamo folder. Defaults to the standard location for the selected host |
-| `--zip-path <file>` | Use a locally downloaded zip instead of downloading from GitHub |
+| `--zip-path <file>` | Use a locally downloaded zip instead of fetching from the build server |
+| `--build-dir <path>` | Use a local build directory instead of downloading |
 | `--backup-dir <path>` | Override the default backup location |
 | `--no-backup` | Skip the backup step entirely |
 | `--force` | Re-install even if already on the target version |
@@ -73,35 +75,38 @@ DynamoCoreUpdate.exe [--host <revit|civil3d>] [--install-dir <path>] [--zip-path
 ### Examples
 
 ```
-# Interactive host selection
+# Interactive host and version selection
 DynamoCoreUpdate.exe
 
-# Target Revit directly (no menu)
-DynamoCoreUpdate.exe --host revit
+# Target Revit 2026 directly (skips host menu, shows version picker)
+DynamoCoreUpdate.exe --host revit-2026
 
-# Target Civil 3D directly (no menu)
-DynamoCoreUpdate.exe --host civil3d
+# Install a specific version on Civil 3D 2026
+DynamoCoreUpdate.exe --host civil3d-2026 --version 3.6.2
+
+# Install the latest stable release
+DynamoCoreUpdate.exe --host revit-2026 --version latest
 
 # Use a local zip (useful on air-gapped machines)
-DynamoCoreUpdate.exe --host revit --zip-path "D:\Downloads\DynamoCoreRuntime3.6.2.11575.zip"
+DynamoCoreUpdate.exe --host revit-2026 --zip-path "D:\Downloads\DynamoCoreRuntime3.6.2.11575.zip"
 
 # Non-standard install location
-DynamoCoreUpdate.exe --host civil3d --install-dir "D:\Autodesk\Civil3D 2026\Dynamo"
+DynamoCoreUpdate.exe --host civil3d-2026 --install-dir "D:\Autodesk\Civil3D 2026\Dynamo"
 ```
 
 ## Restoring from backup
 
-Only the files that the zip would overwrite are backed up. A timestamp is appended to the folder name on each run (e.g. `DynamoForRevit_Backup_20250401_143022`) so reruns never conflict.
+Only the files that the zip would overwrite are backed up. A timestamp is appended to the folder name on each run (e.g. `DynamoForRevit_2026_Backup_20250401_143022`) so reruns never conflict.
 
 To restore, copy the backup folder contents back over the install directory using Windows Explorer, or via the command line:
 
 ```
-xcopy /E /H /Y "%USERPROFILE%\Documents\DynamoForRevit_Backup_<timestamp>\*" "C:\Program Files\Autodesk\Revit 2026\AddIns\DynamoForRevit\"
+xcopy /E /H /Y "%USERPROFILE%\Documents\DynamoForRevit_2026_Backup_<timestamp>\*" "C:\Program Files\Autodesk\Revit 2026\AddIns\DynamoForRevit\"
 ```
 
 ## Notes
 
-- Targets 2026 releases by default. Other versions may work with `--install-dir` but haven't been tested.
+- The tool auto-discovers any Revit or Civil 3D installation found under `C:\Program Files\Autodesk`. Use `--install-dir` for non-standard paths.
 - This tool operates independently of Autodesk's update mechanism — a product repair or update may revert the patched files.
 
 ## Building from source
@@ -113,10 +118,14 @@ Requires the [.NET 9 SDK](https://dotnet.microsoft.com/download).
 dotnet build src/DynamoCoreUpdate.csproj -c Release
 
 # Single self-contained .exe
-dotnet publish src/DynamoCoreUpdate.csproj -c Release /p:PublishSingleFile=true
+dotnet publish src/DynamoCoreUpdate.csproj -c Release -p:PublishSingleFile=true
 ```
 
-Output lands in `src/bin/Release/net9.0-windows/win-x64/`.
+Output lands in `src/bin/Release/net9.0-windows/win-x64/publish/` and is also copied to `src/dist/`.
+
+## Releases
+
+Releases are published automatically when a pull request is merged to `main`. Each release bumps the patch version, builds a fresh single-file exe, and attaches it to a GitHub Release with auto-generated notes.
 
 ## Contributing / Issues
 

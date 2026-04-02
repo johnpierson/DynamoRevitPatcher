@@ -24,36 +24,15 @@ jobs:
         with:
           dotnet-version: '9.x'
 
-      - name: Read and bump patch version
+      - name: Read version
         id: version
         shell: pwsh
         run: |
           $csproj = "src/DynamoCoreUpdate.csproj"
           $xml = [xml](Get-Content $csproj)
-          $current = $xml.Project.PropertyGroup[0].FileVersion   # e.g. 0.0.3.0
-          $parts   = $current.Split('.')
-          $parts[2] = [string]([int]$parts[2] + 1)
-          $parts[3] = '0'
-          $next = $parts -join '.'          # e.g. 0.0.4.0
-          $tag  = 'v' + ($parts[0..2] -join '.')  # e.g. v0.0.4
-
-          # Write back
-          $xml.Project.PropertyGroup[0].FileVersion    = $next
-          $xml.Project.PropertyGroup[0].AssemblyVersion = $next
-          $xml.Save((Resolve-Path $csproj))
-
-          echo "current=$current" >> $env:GITHUB_OUTPUT
-          echo "next=$next"       >> $env:GITHUB_OUTPUT
-          echo "tag=$tag"         >> $env:GITHUB_OUTPUT
-
-      - name: Commit version bump
-        shell: pwsh
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/DynamoCoreUpdate.csproj
-          git commit -m "chore: bump version to ${{ steps.version.outputs.tag }}"
-          git push
+          $ver = $xml.Project.PropertyGroup[0].FileVersion   # e.g. 0.0.3.0
+          $tag = 'v' + ($ver.Split('.')[0..2] -join '.')     # e.g. v0.0.3
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
 
       - name: Build
         shell: pwsh
@@ -91,14 +70,16 @@ jobs:
             ### Options
 
             ```
-            DynamoCoreUpdate.exe [--host <revit|civil3d>] [--install-dir <path>] [--zip-path <file>] [--backup-dir <path>] [--no-backup] [--force]
+            DynamoCoreUpdate.exe [--host <key>] [--version <version>] [--install-dir <path>] [--zip-path <file>] [--build-dir <path>] [--backup-dir <path>] [--no-backup] [--force]
             ```
 
             | Flag | Description |
             |------|-------------|
-            | `--host <revit\|civil3d>` | Target host. If omitted, an interactive menu is shown |
+            | `--host <key>` | Target host key (e.g. `revit-2026`, `civil3d-2026`). If omitted, an interactive menu is shown |
+            | `--version <version>` | Runtime version to install (e.g. `3.6.2`). Use `latest` for the newest stable. If omitted, a picker is shown |
             | `--install-dir <path>` | Path to the Dynamo folder. Defaults to the standard install location |
             | `--zip-path <file>` | Use a locally downloaded zip instead of fetching from the build server |
+            | `--build-dir <path>` | Use a local build directory instead of downloading |
             | `--backup-dir <path>` | Override the default backup location |
             | `--no-backup` | Skip the backup step |
             | `--force` | Re-install even if already on the target version |
